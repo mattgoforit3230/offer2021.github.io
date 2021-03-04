@@ -4,9 +4,9 @@
 
 ## 数据表介绍：
 
-分为三个表：student表(s代表)、course表(c代表)、教师表(t代表)、sc学生课程分数表
+分为4个表：student表、course表、teacher表、sc学生课程分数表
 
-### 学生表：
+### student表：
 
 | sid  | sname | sage | ssex |
 | ---- | ----- | ---- | ---- |
@@ -14,21 +14,21 @@
 |      |       |      |      |
 |      |       |      |      |
 
-### 课程表：
+### 表：
 
 | cid  | cname | tid  |
 | ---- | ----- | ---- |
 |      |       |      |
 |      |       |      |
 
-### 教师表：
+### teacher表：
 
 | tid  | tname |
 | ---- | ----- |
 |      |       |
 |      |       |
 
-### 成绩表：
+### sc表：
 
 | sid  | cid  | score |
 | ---- | ---- | ----- |
@@ -37,7 +37,7 @@
 
 ## ==题目1==：
 
-- ***查询" 01 "课程比" 02 "课程成绩高的学生的信息及课程分数：***
+- ### **查询" 01 "课程比" 02 "课程成绩高的学生的信息及课程分数：**
 
 **思路：**
 
@@ -61,7 +61,7 @@
 
    
 
-- ***查询同时存在" 01 "课程和" 02 "课程的情况(不存在时显示为 null )：***
+- ### 查询同时存在" 01 "课程和" 02 "课程的情况(不存在时显示为 null )：
 
   **思路**：
 
@@ -105,7 +105,7 @@
 
 ## ==题目2==：
 
-- **查询平均成绩大于等于 60 分的同学的学生编号和学生姓名和平均成绩：**
+- ### 查询平均成绩大于等于 60 分的同学的学生编号和学生姓名和平均成绩：
 
   使用group by进行分组，常随着“每”关键字出现，例如每个部门的人数，可以用
 
@@ -119,7 +119,7 @@
 
   2. where后不能跟聚合函数（avg,count,sum等），使用having代替where进行筛选；因为聚合函数是结果集确定的条件下，进行列运算，而where是水平方向的筛选，结果集未确定；
 
-  3. select后面的字段必须出现**在group by后面**，或者**被聚合函数包裹**，否则会因为违反报错sql_mode 的 only_full_group_by 报错
+  3. select后面的字段必须出现**在group by后面**，或者**被聚合函数包裹**，否则会因为违反sql_mode 的 only_full_group_by 报错
 
      ```
      which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
@@ -133,10 +133,65 @@
      select sc.sid,AVG(sc.score) from sc group by sc.sid having AVG(sc.score)>=60;
      ```
 
-  2. 通过sid得到名字，可以直接join student表：
+  2. 通过sid得到名字，可以直接join student表，或者通过子查询：
 
      ```sql
      select student.Sname,sc.sid,AVG(sc.score) from sc LEFT JOIN student on sc.SId=student.SId group by sc.sid,student.sname having AVG(sc.score)>=60;
      ```
 
-​	
+## ==题目3==：
+
+- ### 查询在 SC 表存在成绩的学生信息：
+
+  通过sc表和student表就可以查询到学生信息，但包括了一些重复学生信息，可以用distinct关键字去掉：
+
+  ```sql
+  select DISTINCT student.* from sc left join student on sc.sid=student.sid;
+  ```
+
+## ==题目4==：
+
+- ### 查询所有同学的学生编号、学生姓名、选课总数、所有课程的成绩总和：
+
+  学生编号、学生姓名可以从student表得到，选课总数、所有课程的成绩总和可以从sc表得到，所以join两表：
+
+  ```sql
+  select sc.sid,sname,count(sc.cid),sum(score) from sc left join student on sc.sid=student.sid group by sc.sid ;
+  ```
+
+  此时由于sname未出现在group by以及聚合函数内，会发生only_full_group_by错误，于是可以两次查询：
+
+  ```sql
+  select s.sid,student.sname,s.`count(cid)`,s.`sum(score)` from 
+  (select sid,count(cid),sum(score) from sc group by sc.sid) s  
+  left join student on s.sid=student.sid;
+  ```
+
+  
+
+## ==题目5==：
+
+- ### 查询姓“李”老师的数量：
+
+  通配符的查询：使用like模糊查询，使用%进行填充：
+
+  ```sql
+  select * from teacher where tname like ('李%');
+  ```
+
+
+
+## ==题目6==：
+
+- ### 查询学过"张三"老师授课的同学的信息：
+
+  多重连接：
+
+  ```sql
+  select student.* from student left join sc on student.sid=sc.sid 
+  left join course on sc.cid=course.cid 
+  left join teacher on course.tid=teacher.tid 
+  where teacher.tname='张三';
+  ```
+
+  
